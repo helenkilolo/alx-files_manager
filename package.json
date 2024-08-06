@@ -8,7 +8,7 @@
         "check-lint": "lint [0-9]*.js",
         "start-server": "nodemon --exec babel-node --presets @babel/preset-env ./server.js",
         "start-worker": "nodemon --exec babel-node --presets @babel/preset-env ./worker.js",
-        "dev": "nodemon --exec babel-node --presets @babel/preset-env",
+        "dev": "nodemon --exec babel-node",
         "test": "./node_modules/.bin/mocha tests --require @babel/register --exit"
     },
     "author": "",
@@ -27,6 +27,8 @@
         "@babel/cli": "^7.8.0",
         "@babel/core": "^7.8.0",
         "@babel/node": "^7.8.0",
+        "@babel/plugin-proposal-nullish-coalescing-operator": "^7.18.6",
+        "@babel/plugin-proposal-optional-chaining": "^7.21.0",
         "@babel/preset-env": "^7.8.2",
         "@babel/register": "^7.8.0",
         "chai": "^4.4.1",
