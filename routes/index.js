@@ -1,5 +1,3 @@
-#!/usr/bin/node
-
 const express = require('express');
 const AppController = require('../controllers/AppController');
 const UsersController = require('../controllers/UsersController');
@@ -8,19 +6,25 @@ const FilesController = require('../controllers/FilesController');
 
 const router = express.Router();
 
+// App-related routes
 router.get('/status', AppController.getStatus);
 router.get('/stats', AppController.getStats);
+
+// User-related routes
 router.post('/users', UsersController.postNew);
+router.get('/users/me', UsersController.getMe);
+
+// Auth-related routes
 router.get('/connect', AuthController.getConnect);
 router.get('/disconnect', AuthController.getDisconnect);
-router.get('/users/me', AuthController.getMe);
+
+// File-related routes
 router.post('/files', FilesController.postUpload);
 router.get('/files/:id', FilesController.getShow);
-router.post('/files', FilesController.postUpload);
 router.get('/files', FilesController.getIndex);
 router.get('/files/:id/data', FilesController.getFile);
 router.put('/files/:id/publish', FilesController.putPublish);
 router.put('/files/:id/unpublish', FilesController.putUnpublish);
 
-
 module.exports = router;
+
