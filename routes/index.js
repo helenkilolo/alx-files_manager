@@ -16,6 +16,7 @@ router.get('/disconnect', AuthController.getDisconnect);
 router.get('/users/me', AuthController.getMe);
 router.post('/files', FilesController.postUpload);
 router.get('/files/:id', FilesController.getShow);
+router.post('/files', FilesController.postUpload);
 router.get('/files', FilesController.getIndex);
 router.get('/files/:id/data', FilesController.getFile);
 router.put('/files/:id/publish', FilesController.putPublish);
