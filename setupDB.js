@@ -1,54 +1,43 @@
-const { MongoClient } = require('mongodb');
+const { MongoClient, ObjectId } = require('mongodb');
 
-const url = 'mongodb://localhost:27017';
-const dbName = 'files_manager';
+class DBClient {
+  constructor() {
+    this.client = new MongoClient(process.env.DB_HOST || 'mongodb://localhost:27017', {
+      useNewUrlParser: true,
+      useUnifiedTopology: true,
+    });
+    this.client.connect().then(() => {
+      this.db = this.client.db(process.env.DB_DATABASE || 'files_manager');
+    });
+  }
 
-async function main() {
-  let client;
+  isAlive() {
+    return !!this.client && !!this.db;
+  }
 
-  try {
-    client = await MongoClient.connect(url, { useUnifiedTopology: true });
-    console.log("Connected successfully");
+  async nbUsers() {
+    return this.db.collection('users').countDocuments();
+  }
 
-    const db = client.db(dbName);
+  async nbFiles() {
+    return this.db.collection('files').countDocuments();
+  }
 
-    // Check 'users' collection
-    await checkAndInsert(db, 'users', 4, { name: 'User' });
+  async findUserByEmail(email) {
+    return this.db.collection('users').findOne({ email });
+  }
 
-    // Check 'files' collection
-    await checkAndInsert(db, 'files', 30, { name: 'File' });
+  async findUserById(id) {
+    return this.db.collection('users').findOne({ _id: ObjectId(id) });
+  }
 
-  } catch (err) {
-    console.error('Error connecting to MongoDB: ', err);
-  } finally {
-    if (client) {
-      await client.close();
-    }
+  async createUser(email, password) {
+    const result = await this.db.collection('users').insertOne({ email, password });
+    return result.ops[0];
   }
 }
 
-async function checkAndInsert(db, collectionName, requiredCount, document) {
-  try {
-    const collection = db.collection(collectionName);
-    const count = await collection.countDocuments();
-
-    if (count < requiredCount) {
-      const documents = Array.from({ length: requiredCount - count }, (_, i) => ({
-        ...document,
-        name: `${collectionName} ${i + count + 1}`
-      }));
-
-      await collection.insertMany(documents);
-      console.log(`Inserted ${documents.length} documents into '${collectionName}'`);
-    } else {
-      console.log(`'${collectionName}' already has the required number of documents`);
-    }
-
-  } catch (err) {
-    console.error(`Error checking or inserting documents into '${collectionName}': `, err);
-  }
-}
-
-// Run the main function
-main();
+const dbClient = new DBClient();
+module.exports = dbClient;
+module.exports.ObjectId = ObjectId;
 

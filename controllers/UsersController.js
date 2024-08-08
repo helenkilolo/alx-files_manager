@@ -1,8 +1,6 @@
-import sha1 from 'sha1';
-import { ObjectId } from 'mongodb';
-import dbClient from '../utils/db';
-import redisClient from '../utils/redis';
-import { userQueue } from '../worker';
+const crypto = require('crypto');
+const dbClient = require('../utils/db');
+const redisClient = require('../utils/redis');
 
 class UsersController {
   static async postNew(req, res) {
@@ -11,35 +9,40 @@ class UsersController {
     if (!email) {
       return res.status(400).json({ error: 'Missing email' });
     }
+
     if (!password) {
       return res.status(400).json({ error: 'Missing password' });
     }
 
-    const userExists = await dbClient.dbClient.collection('users').findOne({ email });
-    if (userExists) {
+    const user = await dbClient.findUserByEmail(email);
+
+    if (user) {
       return res.status(400).json({ error: 'Already exist' });
     }
 
-    const hashedPassword = sha1(password);
+    const hashedPassword = crypto.createHash('sha1').update(password).digest('hex');
+    const newUser = await dbClient.createUser(email, hashedPassword);
 
-    const result = await dbClient.dbClient.collection('users').insertOne({ email, password: hashedPassword });
-    userQueue.add({ userId: result.insertedId });
-    return res.status(201).json({ id: result.insertedId, email });
+    return res.status(201).json({ id: newUser._id, email: newUser.email });
   }
 
   static async getMe(req, res) {
-    const token = req.header('X-Token');
-    if (!token) return res.status(401).json({ error: 'Unauthorized' });
+    const token = req.headers['x-token'];
     const userId = await redisClient.get(`auth_${token}`);
-    if (!userId) return res.status(401).json({ error: 'Unauthorized' });
 
-    const users = await dbClient.dbClient.collection('users');
-    const ObjId = new ObjectId(userId);
+    if (!userId) {
+      return res.status(401).json({ error: 'Unauthorized' });
+    }
 
-    const user = await users.findOne({ _id: ObjId });
-    if (user) return res.status(200).json({ id: userId, email: user.email });
-    return res.status(401).json({ error: 'Unauthorized' });
+    const user = await dbClient.findUserById(userId);
+
+    if (!user) {
+      return res.status(404).json({ error: 'Not found' });
+    }
+
+    return res.status(200).json({ id: user._id, email: user.email });
   }
 }
 
-export default UsersController;
+module.exports = UsersController;
+
